@@ -10,17 +10,17 @@ import (
 
 func getCommands() map[string]cliCommand {
 	return map[string]cliCommand{
-	"exit": {
-			name: "exit",
-			description: "Exit the Pokedex",
-			callback: commandExit,
-	},
-	"help": {
-		name: "help",
-		description: "Displays a help message",
-		callback: commandHelp,
-	},
-}
+		"exit": {
+				name: "exit",
+				description: "Exit the Pokedex",
+				callback: commandExit,
+		},
+		"help": {
+			name: "help",
+			description: "Displays a help message",
+			callback: commandHelp,
+		},
+	}
 }
 
 type cliCommand struct {
@@ -43,9 +43,6 @@ func commandHelp() error {
 	help := `
 Welcome to the Pokedex!
 Usage:
-
-help: Displays a help message
-exit: Exit the Pokedex
 	`
 	fmt.Println(help)
 	for k, v := range getCommands() {
@@ -61,6 +58,11 @@ func main() {
 		text := scanner.Text()
 		userInput := cleanInput(text)
 
+		if len(userInput) < 1 {
+			fmt.Print("Pokedex > ")
+			continue
+		}
+		
 		if c, ok := getCommands()[userInput[0]]; ok {
 			c.callback()
 		} else {
