@@ -8,7 +8,8 @@ import (
 )
 
 
-var supportedCommands map[string]cliCommand = map[string]cliCommand{
+func getCommands() map[string]cliCommand {
+	return map[string]cliCommand{
 	"exit": {
 			name: "exit",
 			description: "Exit the Pokedex",
@@ -19,6 +20,7 @@ var supportedCommands map[string]cliCommand = map[string]cliCommand{
 		description: "Displays a help message",
 		callback: commandHelp,
 	},
+}
 }
 
 type cliCommand struct {
@@ -46,6 +48,9 @@ help: Displays a help message
 exit: Exit the Pokedex
 	`
 	fmt.Println(help)
+	for k, v := range getCommands() {
+		fmt.Printf("%s: %s\n", k, v.description)
+	}
 	return  nil
 }
 
@@ -56,7 +61,7 @@ func main() {
 		text := scanner.Text()
 		userInput := cleanInput(text)
 
-		if c, ok := supportedCommands[userInput[0]]; ok {
+		if c, ok := getCommands()[userInput[0]]; ok {
 			c.callback()
 		} else {
 			fmt.Println("Unknown command")
