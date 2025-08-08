@@ -40,6 +40,11 @@ func getCommands() map[string]cliCommand {
 			description: "explore <area_name> - displays a list of pokemon located in <area_name>. Use map to list the area names",
 			callback: explore,
 		},
+		"catch": {
+			name: "catch",
+			description: "Catching Pokemon adds them to the user's Pokedex",
+			callback: commandCatch,
+		},
 	}
 }
 
@@ -68,6 +73,25 @@ type pokemanLocation struct {
 	} `json:"pokemon_encounters"`
 }
 
+type pokemanDetails struct {
+	Name string `json:"name"`
+	Height int `json:"height"`
+	Weight int `json:"weight"`
+	Stats []struct{
+		BaseStat int `json:"base_stat"`
+		Stat struct {
+			Name string `json:"name"`
+		} `json:"stats"`
+	}
+	Types []struct {
+		Type struct{
+			Name string `json:"name"`
+		} `json:"type"`
+	} `json:"types"` 
+}
+
+var caughtPokemen = make(map[string]pokemanDetails)
+
 func cleanInput(text string) []string {
 	return strings.Fields(strings.ToLower(text))
 }
@@ -76,6 +100,7 @@ type pagesNave struct {
 	next string
 	previous string
 	location string
+	pokeName string
 }
 
 var nav = &pagesNave{}
@@ -205,6 +230,44 @@ func explore(nav *pagesNave) error {
 	return nil
 }
 
+func commandCatch(nav *pagesNave) error{
+	fmt.Printf("Throwing a Pokeball at %s...\n", nav.pokeName)
+
+	if _, ok := caughtPokemen[nav.pokeName]; !ok {
+		fmt.Printf("%s escaped!\n", nav.pokeName)
+	} else {
+		fmt.Printf("%s was caught!\n", nav.pokeName)
+		return nil
+	}
+
+	baseUrl := "https://pokeapi.co/api/v2/pokemon"
+	fullUrl := baseUrl + "/" + nav.pokeName
+
+	// prepare and make http request
+	req, err := http.NewRequest("GET", fullUrl, nil)
+	if err != nil {
+		return err
+	}
+	client := &http.Client{}
+	res, err:= client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	var result pokemanDetails
+	decoder := json.NewDecoder(res.Body)
+	err = decoder.Decode(&result)
+	if err != nil {
+		return err
+	}
+
+	// store caught pokeman
+	caughtPokemen[nav.pokeName] = result
+
+	 return nil
+}
+
 func commandExit(nav *pagesNave) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
@@ -240,6 +303,9 @@ func main() {
 		if c, ok := getCommands()[userInput[0]]; ok {
 			if len(userInput) > 1 && c.name == "explore" {
 					nav.location = userInput[1]
+			}
+			if len(userInput) > 1 && c.name == "catch" {
+				nav.pokeName = userInput[1]
 			}
 			c.callback(nav)
 		} else {
