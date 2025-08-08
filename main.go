@@ -35,6 +35,11 @@ func getCommands() map[string]cliCommand {
 			description: "Displays the names of previous 20 location areas in the Pokemon world",
 			callback: commandMapb,
 		},
+		"explore": {
+			name: "explore",
+			description: "explore <area_name> - displays a list of pokemon located in <area_name>. Use map to list the area names",
+			callback: explore,
+		},
 	}
 }
 
@@ -54,6 +59,15 @@ type pokeResult struct {
 		} `json:"results"`
 }
 
+type pokemanLocation struct {
+	Encounters []struct{
+		Pokemon struct {
+			Name string `json:"name"`
+			Url string `json:"url"`
+		} `json:"pokemon"`
+	} `json:"pokemon_encounters"`
+}
+
 func cleanInput(text string) []string {
 	return strings.Fields(strings.ToLower(text))
 }
@@ -61,6 +75,7 @@ func cleanInput(text string) []string {
 type pagesNave struct {
 	next string
 	previous string
+	location string
 }
 
 var nav = &pagesNave{}
@@ -136,6 +151,60 @@ func commandMapb(nav *pagesNave) error {
 	return nil
 }
 
+func explore(nav *pagesNave) error {
+	baseUrl := "https://pokeapi.co/api/v2/location-area"
+	fullUrl := baseUrl + "/" + nav.location
+	// indicate search begins
+	fmt.Printf("Exploring %s...\n", nav.location)
+
+	// check cache for saved names
+	if data, ok := cache.Get(fullUrl); ok {
+		var result pokemanLocation
+		err := json.Unmarshal(data, &result)
+		if err != nil {
+			return err
+		}
+		fmt.Println("Found Pokemon:")
+		for _, r := range result.Encounters {
+			fmt.Printf("- %s\n", r.Pokemon.Name)
+		}
+		return nil
+	}
+	//prepare request
+	req, err := http.NewRequest("GET", fullUrl, nil)
+	if err != nil {
+		return err
+	}
+	client := &http.Client{}
+
+	//make api call
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	//parse data
+	var result pokemanLocation
+	decoder := json.NewDecoder(res.Body)
+	err = decoder.Decode(&result)
+	if err != nil {
+		return err
+	}
+	// cache result
+	data, err := json.Marshal(result)
+	if err != nil {
+		return err
+	}
+	cache.Add(fullUrl, data)
+	// print output
+	fmt.Println("Found Pokemon:")
+	for _, r := range result.Encounters {
+		fmt.Printf("- %s\n", r.Pokemon.Name)
+	}
+	return nil
+}
+
 func commandExit(nav *pagesNave) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
@@ -169,6 +238,9 @@ func main() {
 		}
 
 		if c, ok := getCommands()[userInput[0]]; ok {
+			if len(userInput) > 1 && c.name == "explore" {
+					nav.location = userInput[1]
+			}
 			c.callback(nav)
 		} else {
 			fmt.Println("Unknown command")
