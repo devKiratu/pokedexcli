@@ -7,6 +7,9 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
+
+	"github.com/devKiratu/pokedexcli/internal/pokecache"
 )
 
 
@@ -61,6 +64,7 @@ type pagesNave struct {
 }
 
 var nav = &pagesNave{}
+var cache *pokecache.Cache
 
 func commandMap(nav *pagesNave) error {
 	url := "https://pokeapi.co/api/v2/location-area"
@@ -75,6 +79,18 @@ func commandMap(nav *pagesNave) error {
 }
 
 func makeApiRequest(url string) error {
+// read values from the cache, if they exist
+	if data, ok := cache.Get(url); ok {
+		var apiResults pokeResult
+		err := json.Unmarshal(data, &apiResults)
+		if err != nil {
+			return err
+		}
+		for _, item := range apiResults.Results {
+		fmt.Println(item.Name)
+	}
+	return nil
+	}
 // prepare request
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -93,6 +109,12 @@ func makeApiRequest(url string) error {
 	if err != nil {
 		return err
 	}
+	//cache results
+	data, err := json.Marshal(apiResults)
+	if err != nil {
+		return err
+	}
+	cache.Add(url, data)
 	// fmt.Println(apiResults)
 	nav.next = apiResults.Next
 	nav.previous = apiResults.Previous
@@ -133,6 +155,8 @@ Usage:
 }
 
 func main() {
+	cache = pokecache.NewCache(time.Second * 5)
+
   scanner := bufio.NewScanner(os.Stdin)
 		fmt.Print("Pokedex > ")
 	for scanner.Scan() {
