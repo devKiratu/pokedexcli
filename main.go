@@ -238,12 +238,13 @@ func explore(nav *pagesNave) error {
 func commandCatch(nav *pagesNave) error{
 	fmt.Printf("Throwing a Pokeball at %s...\n", nav.pokeName)
 
-	if _, ok := caughtPokemen[nav.pokeName]; !ok {
-		fmt.Printf("%s escaped!\n", nav.pokeName)
-	} else {
-		fmt.Printf("%s was caught!\n", nav.pokeName)
-		return nil
-	}
+	// if _, ok := caughtPokemen[nav.pokeName]; !ok {
+	// 	fmt.Printf("%s escaped!\n", nav.pokeName)
+	// } else {
+	// 	fmt.Printf("%s was caught!\n", nav.pokeName)
+	// 	fmt.Println("You may now inspect it with the inspect command.")
+	// 	return nil
+	// }
 
 	baseUrl := "https://pokeapi.co/api/v2/pokemon"
 	fullUrl := baseUrl + "/" + nav.pokeName
@@ -269,7 +270,8 @@ func commandCatch(nav *pagesNave) error{
 
 	// store caught pokeman
 	caughtPokemen[nav.pokeName] = result
-
+	fmt.Printf("%s was caught!\n", nav.pokeName)
+	fmt.Println("You may now inspect it with the inspect command.")
 	 return nil
 }
 
