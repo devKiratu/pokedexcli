@@ -45,6 +45,11 @@ func getCommands() map[string]cliCommand {
 			description: "Catching Pokemon adds them to the user's Pokedex",
 			callback: commandCatch,
 		},
+		"inspect": {
+			name: "inspect",
+			description: "Takes the name of a Pokemon and prints the name, height, weight, stats and type(s) of the Pokemon",
+			callback: commandInspect,
+		},
 	}
 }
 
@@ -81,7 +86,7 @@ type pokemanDetails struct {
 		BaseStat int `json:"base_stat"`
 		Stat struct {
 			Name string `json:"name"`
-		} `json:"stats"`
+		} `json:"stat"`
 	}
 	Types []struct {
 		Type struct{
@@ -266,6 +271,29 @@ func commandCatch(nav *pagesNave) error{
 	caughtPokemen[nav.pokeName] = result
 
 	 return nil
+}
+
+func commandInspect(nav *pagesNave) error {
+	//check if pokeman has been caught
+	poke, ok := caughtPokemen[nav.pokeName]
+	if !ok {
+		fmt.Println("you have not caught that pokemon")
+		return nil
+	}
+	// print pokeman's details
+	fmt.Printf("Name: %s\n", poke.Name)
+	fmt.Printf("Height: %v\n", poke.Height)
+	fmt.Printf("Weight: %v\n", poke.Weight)
+	fmt.Println("Stats:")
+	for _, stat := range poke.Stats {
+		fmt.Printf("  - %s: %v\n", stat.Stat.Name, stat.BaseStat)
+	}
+	fmt.Println("Types:")
+	for _, tp := range poke.Types {
+		fmt.Printf("  - %s\n", tp.Type.Name)
+	}
+
+	return nil
 }
 
 func commandExit(nav *pagesNave) error {
