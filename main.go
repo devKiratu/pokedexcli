@@ -50,6 +50,11 @@ func getCommands() map[string]cliCommand {
 			description: "Takes the name of a Pokemon and prints the name, height, weight, stats and type(s) of the Pokemon",
 			callback: commandInspect,
 		},
+		"pokedex": {
+			name: "pokedex",
+			description: "Prints a list of all the names of the Pokemon the user has caught",
+			callback: commandPokedex,
+		},
 	}
 }
 
@@ -295,6 +300,14 @@ func commandInspect(nav *pagesNave) error {
 		fmt.Printf("  - %s\n", tp.Type.Name)
 	}
 
+	return nil
+}
+
+func commandPokedex(nav *pagesNave) error {
+	fmt.Println("Your Pokedex:")
+	for k := range caughtPokemen{
+		fmt.Printf("  - %s\n", k)
+	}
 	return nil
 }
 
